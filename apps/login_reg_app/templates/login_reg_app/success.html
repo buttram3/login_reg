@@ -5,6 +5,57 @@
     <title>Success</title>
   </head>
   <body>
-    <h1>Welcome {{request.session.user.first_name}}! You've successfully logged in!</h1>
+  <form action="/logout" method="post">
+    {% csrf_token %}
+    <input type="submit" value="Logout">
+  </form>
+    <h1>Hello, {{request.session.user.first_name}}!</h1>
+
+    <p>Here are your appointments for today {{today}}:</p><br>
+    <table>
+      <tr>
+        <th>Tasks</th>
+        <th>Time</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+        {% for task in currenttasks reversed %}
+          <tr>
+            <td>{{task.task}}</td>
+            <td>{{task.time}}</td>
+            <td>{{task.status}}</td>
+            <td><a href="/edit_appointment/{{task.id}}">Edit</a> <a href="/delete_appointment/{{task.id}}">Delete</a></td>
+          </tr>
+        {% endfor %}
+    </table>
+
+    <p>Your other appointments</p><br>
+    <table>
+      <tr>
+        <th>Tasks</th>
+        <th>Time</th>
+        <th>Status</th>
+      </tr>
+      {% for task in futuretasks reversed %}
+      <tr>
+        <td>{{task.task}}</td>
+        <td>{{task.time}}</td>
+        <td>{{task.status}}</td>
+      </tr>
+      {% endfor %}
+    </table><br>
+    <p>Add An Appointment:</p>
+    <form action="/add_appointment" method="post">
+      {% csrf_token %}
+      Date :<input type="date" name="date" ><br>
+      Time :<input type="time" name="time" ><br>
+      Tasks:<input type="text" name="task" ><br>
+      <input type="submit" name="add" value="Add">
+    </form>
+    {% if messages %}
+      {% for message in messages %}
+        <p>{{message}}</p>
+      {% endfor %}
+    {% endif %}
   </body>
 </html>

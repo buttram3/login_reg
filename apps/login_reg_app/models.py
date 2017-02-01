@@ -2,10 +2,12 @@ from __future__ import unicode_literals
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 import bcrypt, re
+import datetime
+# from datetime import datetime, date
 
+today = datetime.date.today
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+$')
 # Create your models here.
-
 
 
 class UserManager(models.Manager):
@@ -25,6 +27,7 @@ class UserManager(models.Manager):
 
 
     def validate_inputs(self, request):
+        bday = request.POST['bday']
         error=[]
         if not request.POST['first_name'].isalpha() or not request.POST['last_name'].isalpha():
             error.append("The first or last name can't have numbers")
@@ -34,6 +37,8 @@ class UserManager(models.Manager):
             error.append("Please input a valid email")
         if len(request.POST['password_create'])<8 or request.POST['password_create'] != request.POST['pw_confirm']:
             error.append("Passwords must match and be at least 8 characters.")
+        # if bday == unicode(datetime.today().date()) or bday > unicode(datetime.today().date()):
+        #         errors.append('Birthday needs to be in past')
         return error
 
     def validateLogin(self, request):
@@ -52,7 +57,43 @@ class User(models.Model):
     first_name = models.CharField(max_length=45)
     last_name = models.CharField(max_length=45)
     email = models.CharField(max_length=100)
-    pw_hash= models.CharField(max_length=300)
+    pw_hash = models.CharField(max_length=300)
     created_at = models.DateTimeField(auto_now_add = True)
     updated_at = models.DateTimeField(auto_now = True)
     objects = UserManager()
+
+class AppointmentManager(models.Manager):
+    def validate_addapp(self, task, date, time, user):
+        error_list=[]
+        truth= True
+        if task == "":
+            error_list.append('Task field must contain text!')
+            truth = False
+
+        if not time:
+            error_list.append('Time field must contain a time!')
+            truth = False
+
+        if not date:
+            error_list.append('Your appointment must have a date!')
+            truth = False
+        print date
+        if date < today:
+            error_list.append('Date must be either today or someday in the future')
+            truth = False
+
+        if not truth:
+            return (False, error_list)
+
+        new_task = Appointment.objects.create(task=task, date=date, time=time, user=user)
+        return (True, new_task)
+
+class Appointment(models.Model):
+    task = models.CharField(max_length=420)
+    date = models.DateField()
+    time = models.TimeField()
+    status = models.CharField(max_length=420, default='Pending')
+    user = models.ForeignKey(User)
+    created_at = models.DateTimeField(auto_now_add= True)
+    updated_at = models.DateTimeField(auto_now= True)
+    objects = AppointmentManager()
